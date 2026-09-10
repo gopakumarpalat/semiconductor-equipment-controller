@@ -1,14 +1,19 @@
 # Build output
 build/
 
-# Executables
+# Executable files
 *.exe
 
-# Object files
-*.o
+# Logs
+logs/
+
+# VS Code
+.vscode/
 
 # Temporary files
 *.tmp
+*.temp
 
-# VS Code settings
-.vscode/
+# OS files
+.DS_Store
+Thumbs.db
