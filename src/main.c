@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "equipment.h"
 
 enum EquipmentState
@@ -10,52 +11,34 @@ enum EquipmentState
 
 int main()
 {
-    int command;
+    Equipment etch;
+    Equipment cvd;
+
+    equipment_create(&etch, 101, "ETCH01");
+    equipment_create(&cvd, 102, "CVD01");
 
     printf("=================================\n");
     printf(" Semiconductor Equipment Control\n");
-    printf("=================================\n");
+    printf("=================================\n\n");
 
-    while (1)
-    {
-        printf("\n");
+    printf("Equipment 1:\n");
+    printf("ID   : %d\n", etch.id);
+    printf("Name : %s\n", etch.name);
 
-        equipment_print_state();
+    printf("\nEquipment 2:\n");
+    printf("ID   : %d\n", cvd.id);
+    printf("Name : %s\n", cvd.name);
 
-        printf("\n");
-        printf("1. Initialize Equipment\n");
-        printf("2. Start Equipment\n");
-        printf("3. Stop Equipment\n");
-        printf("4. Exit\n");
+    printf("\nStarting ETCH01...\n");
 
-        printf("\nEnter command: ");
+    equipment_init(&etch);
+    equipment_start(&etch);
 
-        scanf("%d", &command);
+    printf("\nETCH01 state:\n");
+    equipment_print_state(&etch);
 
-        switch (command)
-        {
-            case 1:
-                equipment_init();
-                break;
-
-            case 2:
-                equipment_start();
-                break;
-
-            case 3:
-                equipment_stop();
-                break;
-
-            case 4:
-                printf("Exiting Equipment Controller.\n");
-                return 0;
-
-            default:
-                printf("Invalid command.\n");
-                break;
-        }
-    }
-
+    printf("\nCVD01 state:\n");
+    equipment_print_state(&cvd);
 
     return 0;
 }

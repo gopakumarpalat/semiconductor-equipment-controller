@@ -1,22 +1,20 @@
 #include<stdio.h>
+#include<string.h>
 #include "equipment.h"
-
-static EquipmentState current_state = EQUIPMENT_IDLE;
-
 
 /* 
    Initially equipment_init(),equipment_start(), equipment_stop() directly changes the current_state.
    Now we write equipment_transition(), so we have one central location controlling state transitions.
 */
-static int equipment_transition(EquipmentCommand command)
+static int equipment_transition(Equipment *equipment, EquipmentCommand command)
 {
-    switch (current_state)
+    switch (equipment->state)
     {
         case EQUIPMENT_IDLE:
 
             if (command == EQUIPMENT_CMD_INIT)
             {
-                current_state = EQUIPMENT_READY;
+                equipment->state = EQUIPMENT_READY;
                 return 0;
             }
 
@@ -26,7 +24,7 @@ static int equipment_transition(EquipmentCommand command)
 
             if (command == EQUIPMENT_CMD_START)
             {
-                current_state = EQUIPMENT_RUNNING;
+                equipment->state = EQUIPMENT_RUNNING;
                 return 0;
             }
 
@@ -36,7 +34,7 @@ static int equipment_transition(EquipmentCommand command)
 
             if (command == EQUIPMENT_CMD_STOP)
             {
-                current_state = EQUIPMENT_READY;
+                equipment->state = EQUIPMENT_READY;
                 return 0;
             }
 
@@ -49,11 +47,11 @@ static int equipment_transition(EquipmentCommand command)
     return -1;
 }
 
-void equipment_init()
+void equipment_init(Equipment *equipment)
 {
-    if (equipment_transition(EQUIPMENT_CMD_INIT) == 0)
+    if (equipment_transition(equipment, EQUIPMENT_CMD_INIT) == 0)
     {
-        printf("Equipment initialized.\n");
+        printf("Equipment initialized(IDLE -> READY).\n");
     }
     else
     {
@@ -61,24 +59,23 @@ void equipment_init()
     }
 }
 
-void equipment_start()
+void equipment_start(Equipment *equipment)
 {
-    if (equipment_transition(EQUIPMENT_CMD_START) == 0)
+    if (equipment_transition(equipment, EQUIPMENT_CMD_START) == 0)
     {
-        printf("Equipment started.\n");
+        printf("Equipment started(READY -> RUNNING).\n");
     }
     else
     {
         printf("Cannot start equipment from current state.\n");
     }
-
 }
 
-void equipment_stop()
+void equipment_stop(Equipment *equipment)
 {
-    if (equipment_transition(EQUIPMENT_CMD_STOP) == 0)
+    if (equipment_transition(equipment, EQUIPMENT_CMD_STOP) == 0)
     {
-        printf("Equipment stopped.\n");
+        printf("Equipment stopped(RUNNING -> READY).\n");
     }
     else
     {
@@ -86,9 +83,9 @@ void equipment_stop()
     }
 }
 
-void equipment_print_state()
+void equipment_print_state(const Equipment *equipment)
 {
-    switch (current_state)
+    switch (equipment->state)
     {
         case EQUIPMENT_IDLE:
             printf("Equipment State: IDLE\n");
@@ -106,4 +103,13 @@ void equipment_print_state()
             printf("Equipment State: UNKNOWN\n");
             break;
     }
+}
+
+void equipment_create(Equipment *equipment, int id, const char *name)
+{
+    equipment->id = id;
+
+    strcpy(equipment->name, name);
+
+    equipment->state = EQUIPMENT_IDLE;
 }

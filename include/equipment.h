@@ -15,9 +15,19 @@ typedef enum
     EQUIPMENT_CMD_STOP
 } EquipmentCommand;
 
-void equipment_init(void);
-void equipment_start(void);
-void equipment_stop(void);
-void equipment_print_state(void);
+typedef struct 
+{
+    int id;
+    char name[32];
+    EquipmentState state;
+}Equipment;
+
+void equipment_create( Equipment *equipment, int id, const char *name);
+
+
+void equipment_init(Equipment *equipment);
+void equipment_start(Equipment *equipment);
+void equipment_stop(Equipment *equipment);
+void equipment_print_state(const Equipment *equipment);
 
 #endif
