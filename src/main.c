@@ -11,34 +11,39 @@ enum EquipmentState
 
 int main()
 {
-    Equipment etch;
-    Equipment cvd;
+    Equipment equipment_list[3];
 
-    equipment_create(&etch, 101, "ETCH01");
-    equipment_create(&cvd, 102, "CVD01");
+    equipment_create(&equipment_list[0], 101, "ETCH01");
+    equipment_create(&equipment_list[1], 102, "CVD01");
+    equipment_create(&equipment_list[2], 103, "CMP01");
 
     printf("=================================\n");
     printf(" Semiconductor Equipment Control\n");
     printf("=================================\n\n");
 
-    printf("Equipment 1:\n");
-    printf("ID   : %d\n", etch.id);
-    printf("Name : %s\n", etch.name);
+   
 
-    printf("\nEquipment 2:\n");
-    printf("ID   : %d\n", cvd.id);
-    printf("Name : %s\n", cvd.name);
+    for(int i = 0; i < 3; i++)
+    {
+        printf("Equipment %d:\n", i + 1);
+        printf("ID   : %d\n", equipment_list[i].id);
+        printf("Name : %s\n", equipment_list[i].name);
+        equipment_print_state(&equipment_list[i]);
+        printf("\n");
+    }
 
     printf("\nStarting ETCH01...\n");
 
-    equipment_init(&etch);
-    equipment_start(&etch);
+    equipment_init(&equipment_list[0]);
+    equipment_start(&equipment_list[0]);
 
-    printf("\nETCH01 state:\n");
-    equipment_print_state(&etch);
+    printf("\nFinal states:\n");
 
-    printf("\nCVD01 state:\n");
-    equipment_print_state(&cvd);
+    for (int i = 0; i < 3; i++)
+    {
+        printf("%s: ", equipment_list[i].name);
+        equipment_print_state(&equipment_list[i]);
+    }
 
     return 0;
 }
