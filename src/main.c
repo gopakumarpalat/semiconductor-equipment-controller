@@ -11,11 +11,12 @@ enum EquipmentState
 
 int main()
 {
-    Equipment equipment_list[3];
+    Equipment equipment_list[4];
 
     equipment_create(&equipment_list[0], 101, "ETCH01");
     equipment_create(&equipment_list[1], 102, "CVD01");
     equipment_create(&equipment_list[2], 103, "CMP01");
+    equipment_create(&equipment_list[3], 104, "PVD01");
 
     printf("=================================\n");
     printf(" Semiconductor Equipment Control\n");
@@ -23,7 +24,7 @@ int main()
 
    
 
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < 4; i++)
     {
         printf("Equipment %d:\n", i + 1);
         printf("ID   : %d\n", equipment_list[i].id);
@@ -37,9 +38,14 @@ int main()
     equipment_init(&equipment_list[0]);
     equipment_start(&equipment_list[0]);
 
+    printf("\nStarting PVD01...\n");
+
+    equipment_init(&equipment_list[3]);
+    equipment_start(&equipment_list[3]);
+
     printf("\nFinal states:\n");
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 4; i++)
     {
         printf("%s: ", equipment_list[i].name);
         equipment_print_state(&equipment_list[i]);
