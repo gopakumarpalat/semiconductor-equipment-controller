@@ -19,9 +19,9 @@ void equipment_stop_message(Equipment *equipment)
     printf(">>> %s has stopped!\n", equipment->name);
 }
 
-void equipment_alarm_message(Equipment *equipment)
+void equipment_alarm_message( Equipment *equipment, const char *message)
 {
-    printf(">>> %s alarm started!\n", equipment->name);
+    printf( ">>> %s ALARM: %s!\n", equipment->name, message);
 }
 
 int main()
@@ -40,11 +40,13 @@ int main()
 
     // Set equipment_started_message as a callback function of equipment
     equipment_set_start_callback( &equipment_list[0], equipment_started_message );
-    equipment_set_start_callback( &equipment_list[3], equipment_started_message );
+    equipment_set_start_callback( &equipment_list[3], equipment_started_message );    
 
     //Register the stop callback for ETCH01.
-    equipment_set_stop_callback( &equipment_list[0], equipment_stop_message );
-   
+    equipment_set_stop_callback( &equipment_list[0], equipment_stop_message );  
+    
+    //Register the alarm callback for ETCH01.
+    equipment_set_alarm_callback( &equipment_list[0], equipment_alarm_message);
 
     for(int i = 0; i < 4; i++)
     {
@@ -65,6 +67,8 @@ int main()
     printf("\nStarting PVD01...\n");
     equipment_init(&equipment_list[3]);
     equipment_start(&equipment_list[3]);
+
+    equipment_raise_alarm( &equipment_list[0], "Temperature too high");
 
     printf("\nFinal states:\n");
 

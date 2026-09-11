@@ -126,17 +126,27 @@ void equipment_create(Equipment *equipment, int id, const char *name)
     equipment->start_callback = NULL;
 }
 
-void equipment_set_start_callback( Equipment *equipment, void (*callback)(Equipment *))
+void equipment_set_start_callback( Equipment *equipment, EquipmentStartCallback callback)
 {
     equipment->start_callback = callback;
 }
 
-void equipment_set_stop_callback( Equipment *equipment, void (*callback)(Equipment *))
+void equipment_set_stop_callback( Equipment *equipment, EquipmentStopCallback callback)
 {
     equipment->stop_callback = callback;
 }
 
-void equipment_set_alarm_callback( Equipment *equipment, void (*callback)(Equipment *))
+void equipment_set_alarm_callback( Equipment *equipment, EquipmentAlarmCallback callback)
 {
     equipment->alarm_callback = callback;
+}
+
+void equipment_raise_alarm( Equipment *equipment, const char *message)
+{
+    printf("\nEquipment alarm detected.\n");
+
+    if (equipment->alarm_callback != NULL)
+    {
+        equipment->alarm_callback( equipment, message);
+    }
 }

@@ -17,6 +17,9 @@ typedef enum
 
 /* Forward declaration */
 typedef struct Equipment Equipment;
+typedef void (*EquipmentStartCallback)(Equipment *);
+typedef void (*EquipmentStopCallback)(Equipment *);
+typedef void (*EquipmentAlarmCallback)(Equipment *, const char *);
 
 /* Equipment structure */
 struct Equipment
@@ -24,9 +27,9 @@ struct Equipment
     int id;
     char name[32];
     EquipmentState state;
-    void(*start_callback)(Equipment *);
-    void(*stop_callback)(Equipment *);
-    void(*alarm_callback)(Equipment *);
+    EquipmentStartCallback start_callback;
+    EquipmentStopCallback stop_callback;
+    EquipmentAlarmCallback alarm_callback;
 };
 
 /* Functions */
@@ -40,6 +43,7 @@ void equipment_print_state(const Equipment *equipment);
 /* Callback setters */
 void equipment_set_start_callback( Equipment *equipment, void(*callback)(Equipment *));
 void equipment_set_stop_callback( Equipment *equipment, void(*callback)(Equipment *));
-void equipment_set_alarm_callback( Equipment *equipment, void(*callback)(Equipment *));
+void equipment_set_alarm_callback( Equipment *equipment, void (*callback)(Equipment *, const char *));
+void equipment_raise_alarm( Equipment *equipment, const char *message);
 
 #endif
