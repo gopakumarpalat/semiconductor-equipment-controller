@@ -27,6 +27,10 @@ int main()
     printf(" Semiconductor Equipment Control\n");
     printf("=================================\n\n");
 
+
+    // Set equipment_started_message as a callback function of equipment
+    equipment_set_start_callback( &equipment_list[0], equipment_started_message );
+    equipment_set_start_callback( &equipment_list[3], equipment_started_message );
    
 
     for(int i = 0; i < 4; i++)
@@ -41,12 +45,12 @@ int main()
     printf("\nStarting ETCH01...\n");
 
     equipment_init(&equipment_list[0]);
-    equipment_start(&equipment_list[0], equipment_started_message);
+    equipment_start(&equipment_list[0]);
 
     printf("\nStarting PVD01...\n");
 
     equipment_init(&equipment_list[3]);
-    equipment_start(&equipment_list[3], equipment_started_message);
+    equipment_start(&equipment_list[3]);
 
     printf("\nFinal states:\n");
 

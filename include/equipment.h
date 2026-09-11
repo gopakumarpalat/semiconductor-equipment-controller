@@ -20,13 +20,15 @@ typedef struct
     int id;
     char name[32];
     EquipmentState state;
+    void(*start_callback)(void);
 }Equipment;
 
 void equipment_create( Equipment *equipment, int id, const char *name);
+void equipment_set_start_callback( Equipment *equipment, void(*callback)(void));
 
 
 void equipment_init(Equipment *equipment);
-void equipment_start(Equipment *equipment, void(*callback)(void));
+void equipment_start(Equipment *equipment);
 void equipment_stop(Equipment *equipment);
 void equipment_print_state(const Equipment *equipment);
 
