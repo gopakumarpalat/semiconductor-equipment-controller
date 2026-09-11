@@ -59,11 +59,16 @@ void equipment_init(Equipment *equipment)
     }
 }
 
-void equipment_start(Equipment *equipment)
+void equipment_start(Equipment *equipment, void(*callback)(void))
 {
     if (equipment_transition(equipment, EQUIPMENT_CMD_START) == 0)
     {
         printf("Equipment started(READY -> RUNNING).\n");
+        // Check function pointer is valid; else it will cause crash.
+        if (callback != NULL)
+        {
+            callback();
+        }
     }
     else
     {

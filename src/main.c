@@ -9,6 +9,11 @@ enum EquipmentState
     RUNNING
 };
 
+void equipment_started_message(void)
+{
+    printf(">>> Equipment has started!\n");
+}
+
 int main()
 {
     Equipment equipment_list[4];
@@ -36,12 +41,12 @@ int main()
     printf("\nStarting ETCH01...\n");
 
     equipment_init(&equipment_list[0]);
-    equipment_start(&equipment_list[0]);
+    equipment_start(&equipment_list[0], equipment_started_message);
 
     printf("\nStarting PVD01...\n");
 
     equipment_init(&equipment_list[3]);
-    equipment_start(&equipment_list[3]);
+    equipment_start(&equipment_list[3], equipment_started_message);
 
     printf("\nFinal states:\n");
 
