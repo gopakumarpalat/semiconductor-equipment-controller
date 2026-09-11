@@ -9,19 +9,19 @@ enum EquipmentState
     RUNNING
 };
 
-void equipment_started_message(void)
+void equipment_started_message(Equipment *equipment)
 {
-    printf(">>> Equipment has started!\n");
+    printf(">>> %s has started!\n", equipment->name);
 }
 
-void equipment_stop_message(void)
+void equipment_stop_message(Equipment *equipment)
 {
-    printf(">>> Equipment has stopped!\n");
+    printf(">>> %s has stopped!\n", equipment->name);
 }
 
-void equipment_alarm_message(void)
+void equipment_alarm_message(Equipment *equipment)
 {
-    printf(">>> Equipment alarm started!\n");
+    printf(">>> %s alarm started!\n", equipment->name);
 }
 
 int main()

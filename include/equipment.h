@@ -15,25 +15,31 @@ typedef enum
     EQUIPMENT_CMD_STOP
 } EquipmentCommand;
 
-typedef struct 
+/* Forward declaration */
+typedef struct Equipment Equipment;
+
+/* Equipment structure */
+struct Equipment
 {
     int id;
     char name[32];
     EquipmentState state;
-    void(*start_callback)(void);
-    void(*stop_callback)(void);
-    void(*alarm_callback)(void);
-}Equipment;
+    void(*start_callback)(Equipment *);
+    void(*stop_callback)(Equipment *);
+    void(*alarm_callback)(Equipment *);
+};
 
+/* Functions */
 void equipment_create( Equipment *equipment, int id, const char *name);
-void equipment_set_start_callback( Equipment *equipment, void(*callback)(void));
-void equipment_set_stop_callback( Equipment *equipment, void(*callback)(void));
-void equipment_set_alarm_callback( Equipment *equipment, void(*callback)(void));
-
-
 void equipment_init(Equipment *equipment);
 void equipment_start(Equipment *equipment);
 void equipment_stop(Equipment *equipment);
 void equipment_print_state(const Equipment *equipment);
+
+
+/* Callback setters */
+void equipment_set_start_callback( Equipment *equipment, void(*callback)(Equipment *));
+void equipment_set_stop_callback( Equipment *equipment, void(*callback)(Equipment *));
+void equipment_set_alarm_callback( Equipment *equipment, void(*callback)(Equipment *));
 
 #endif

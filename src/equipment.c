@@ -67,7 +67,7 @@ void equipment_start(Equipment *equipment)
         // Check function pointer is valid; else it will cause crash.
         if (equipment->start_callback != NULL)
         {
-            equipment->start_callback();
+            equipment->start_callback(equipment);
         }
     }
     else
@@ -84,7 +84,7 @@ void equipment_stop(Equipment *equipment)
         // Check function pointer is valid; else it will cause crash.
         if (equipment->stop_callback != NULL)
         {
-            equipment->stop_callback();
+            equipment->stop_callback(equipment);
         }
     }
     else
@@ -126,17 +126,17 @@ void equipment_create(Equipment *equipment, int id, const char *name)
     equipment->start_callback = NULL;
 }
 
-void equipment_set_start_callback( Equipment *equipment, void (*callback)(void))
+void equipment_set_start_callback( Equipment *equipment, void (*callback)(Equipment *))
 {
     equipment->start_callback = callback;
 }
 
-void equipment_set_stop_callback( Equipment *equipment, void (*callback)(void))
+void equipment_set_stop_callback( Equipment *equipment, void (*callback)(Equipment *))
 {
     equipment->stop_callback = callback;
 }
 
-void equipment_set_alarm_callback( Equipment *equipment, void (*callback)(void))
+void equipment_set_alarm_callback( Equipment *equipment, void (*callback)(Equipment *))
 {
     equipment->alarm_callback = callback;
 }
