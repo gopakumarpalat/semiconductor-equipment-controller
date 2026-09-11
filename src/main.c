@@ -14,6 +14,16 @@ void equipment_started_message(void)
     printf(">>> Equipment has started!\n");
 }
 
+void equipment_stop_message(void)
+{
+    printf(">>> Equipment has stopped!\n");
+}
+
+void equipment_alarm_message(void)
+{
+    printf(">>> Equipment alarm started!\n");
+}
+
 int main()
 {
     Equipment equipment_list[4];
@@ -31,6 +41,9 @@ int main()
     // Set equipment_started_message as a callback function of equipment
     equipment_set_start_callback( &equipment_list[0], equipment_started_message );
     equipment_set_start_callback( &equipment_list[3], equipment_started_message );
+
+    //Register the stop callback for ETCH01.
+    equipment_set_stop_callback( &equipment_list[0], equipment_stop_message );
    
 
     for(int i = 0; i < 4; i++)
@@ -43,12 +56,13 @@ int main()
     }
 
     printf("\nStarting ETCH01...\n");
-
     equipment_init(&equipment_list[0]);
     equipment_start(&equipment_list[0]);
 
-    printf("\nStarting PVD01...\n");
+    printf("\nStoping ETCH01...\n");
+    equipment_stop(&equipment_list[0]);
 
+    printf("\nStarting PVD01...\n");
     equipment_init(&equipment_list[3]);
     equipment_start(&equipment_list[3]);
 
