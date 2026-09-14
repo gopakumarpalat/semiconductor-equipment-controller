@@ -124,6 +124,17 @@ void equipment_create(Equipment *equipment, int id, const char *name)
     equipment->state = EQUIPMENT_IDLE;
 
     equipment->start_callback = NULL;
+    equipment->stop_callback = NULL;
+    equipment->alarm_callback = NULL;
+
+    pthread_mutex_init( &equipment->mutex, NULL);
+
+    equipment->counter = 0;
+}
+
+void equipment_destroy(Equipment *equipment)
+{
+    pthread_mutex_destroy(&equipment->mutex);
 }
 
 void equipment_set_start_callback( Equipment *equipment, EquipmentStartCallback callback)

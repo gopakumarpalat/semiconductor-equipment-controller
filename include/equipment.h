@@ -1,6 +1,8 @@
 #ifndef EQUIPMENT_H
 #define EQUIPMENT_H
 
+#include <pthread.h>
+
 typedef enum
 {
     EQUIPMENT_IDLE,
@@ -27,10 +29,21 @@ struct Equipment
     int id;
     char name[32];
     EquipmentState state;
+
     EquipmentStartCallback start_callback;
     EquipmentStopCallback stop_callback;
     EquipmentAlarmCallback alarm_callback;
+
+    pthread_mutex_t mutex;
+
+    int counter;
 };
+
+typedef struct
+{
+    Equipment *equipment;
+    int thread_id;
+} WorkerData;
 
 /* Functions */
 void equipment_create( Equipment *equipment, int id, const char *name);
@@ -38,6 +51,7 @@ void equipment_init(Equipment *equipment);
 void equipment_start(Equipment *equipment);
 void equipment_stop(Equipment *equipment);
 void equipment_print_state(const Equipment *equipment);
+void equipment_destroy(Equipment *equipment);
 
 
 /* Callback setters */
