@@ -1,31 +1,28 @@
 /*
 
-                TCP CONNECTION
 Client                                      Server
   │                                           │
   │──────── connect() ──────────────────────►│
   │                                           │
-  │──────── START ETCH01 ───────────────────►│
+  │──────── START ──────────────────────────►│
+  │◄──────── ACK START ──────────────────────│
   │                                           │
-  │                                      recv()
+  │──────── STATUS ─────────────────────────►│
+  │◄──────── STATE RUNNING ──────────────────│
   │                                           │
-  │◄──────────── ACK ────────────────────────│
+  │──────── STOP ───────────────────────────►│
+  │◄──────── ACK STOP ───────────────────────│
   │                                           │
-  │──────── STOP ETCH01 ────────────────────►│
+  │──────── STATUS ─────────────────────────►│
+  │◄──────── STATE READY ────────────────────│
   │                                           │
-  │                                      recv()
+  │──────── RESET ──────────────────────────►│
+  │◄──────── ACK RESET ──────────────────────│
   │                                           │
-  │◄──────────── ACK ────────────────────────│
-  │                                           │
-  │──────── RESET ETCH01 ───────────────────►│
-  │                                           │
-  │                                      recv()
-  │                                           │
-  │◄──────────── ACK ────────────────────────│
+  │──────── STATUS ─────────────────────────►│
+  │◄──────── STATE IDLE ─────────────────────│
   │                                           │
   │──────── close() ────────────────────────►│
-  │                                           │
-  │                                      recv() = 0
   │                                           │
 
 */
@@ -42,10 +39,7 @@ Client                                      Server
 #define SERVER_IP "127.0.0.1"
 
 
-int recv_line(
-    int client_fd,
-    char *buffer,
-    int buffer_size)
+int recv_line( int client_fd, char *buffer, int buffer_size)
 {
     int total = 0;
 
@@ -92,7 +86,17 @@ int main(void)
 
     struct sockaddr_in server_addr; // Which server to connect 
 
-    char *commands[] = { "START ETCH01\n", "STOP ETCH01\n", "RESET ETCH01\n" };
+    //char *commands[] = { "START ETCH01\n", "STOP ETCH01\n", "RESET ETCH01\n" };
+
+    char *commands[] =
+    {
+        "START\n",
+        "STATUS\n",
+        "STOP\n",
+        "STATUS\n",
+        "RESET\n",
+        "STATUS\n"
+    };
 
     // Create client socket
     client_fd = socket( AF_INET, SOCK_STREAM, 0);
@@ -130,7 +134,7 @@ int main(void)
 
     printf("Client: connected to server.\n");
 
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 6; i++)
     {
         printf( "Client: sending command: %s", commands[i]);
 

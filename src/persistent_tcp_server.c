@@ -30,9 +30,16 @@ Worker Thread
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
-
+#include "equipment.h"
 
 #define PORT 5000
+
+typedef struct
+{
+    int client_fd;
+    Equipment *equipment;
+
+} ClientContext;
 
 volatile sig_atomic_t server_running = 1; /* 1 → Server running, 0 → Server shutdown requested*/
 
@@ -83,64 +90,223 @@ int recv_line( int client_fd, char *buffer, int buffer_size)
 
 void *client_handler(void *arg)
 {
-    // Print current running thread ID
-    printf( "Worker Thread ID: %lu\n", (unsigned long)pthread_self());
+    ClientContext *context = (ClientContext *)arg;
 
-    //printf("Thread: sleeping for 10 seconds...\n");
-    //sleep(10);
+    int client_fd = context->client_fd;
+
+    Equipment *equipment = context->equipment;
+
+    free(context);
 
 
-    int client_fd = *(int *)arg;
-    
-    // Release memory which cretaed using malloc, after copying to avoid memory leak
-    free(arg);
+    printf(
+        "[Thread %lu] Worker thread started.\n",
+        (unsigned long)pthread_self()
+    );
+
 
     char buffer[1024];
 
+
     while (1)
     {
-
         int bytes_received;
 
-        //bytes_received = recv( client_fd, buffer, sizeof(buffer), 0);
-        bytes_received = recv_line( client_fd, buffer, sizeof(buffer));
+        bytes_received = recv_line(
+            client_fd,
+            buffer,
+            sizeof(buffer)
+        );
+
 
         if (bytes_received == -1)
         {
             perror("recv_line");
             break;
         }
-        else if (bytes_received == 0)
+
+
+        if (bytes_received == 0)
         {
-             printf( "[Thread %lu] client disconnected.\n", (unsigned long)pthread_self());
+            printf(
+                "[Thread %lu] Client disconnected.\n",
+                (unsigned long)pthread_self()
+            );
+
             break;
         }
 
-        printf( "[Thread %lu] received command: %s\n", (unsigned long)pthread_self(), buffer);
+
+        printf(
+            "[Thread %lu] Received command: %s\n",
+            (unsigned long)pthread_self(),
+            buffer
+        );
+
 
         char response[2048];
 
-        snprintf( response, sizeof(response), "ACK %s\n", buffer);
 
-        if (send( client_fd, response, strlen(response), 0) == -1)
+        /*
+         * START
+         */
+
+        if (strcmp(buffer, "START") == 0)
+        {
+            equipment_start(equipment);
+
+            snprintf(
+                response,
+                sizeof(response),
+                "ACK START\n"
+            );
+        }
+
+
+        /*
+         * STOP
+         */
+
+        else if (strcmp(buffer, "STOP") == 0)
+        {
+            equipment_stop(equipment);
+
+            snprintf(
+                response,
+                sizeof(response),
+                "ACK STOP\n"
+            );
+        }
+
+
+        /*
+         * STATUS
+         */
+
+        else if (strcmp(buffer, "STATUS") == 0)
+        {
+            pthread_mutex_lock(&equipment->mutex);
+
+            EquipmentState state = equipment->state;
+
+            pthread_mutex_unlock(&equipment->mutex);
+
+
+            if (state == EQUIPMENT_IDLE)
+            {
+                snprintf(
+                    response,
+                    sizeof(response),
+                    "STATE IDLE\n"
+                );
+            }
+            else if (state == EQUIPMENT_READY)
+            {
+                snprintf(
+                    response,
+                    sizeof(response),
+                    "STATE READY\n"
+                );
+            }
+            else if (state == EQUIPMENT_RUNNING)
+            {
+                snprintf(
+                    response,
+                    sizeof(response),
+                    "STATE RUNNING\n"
+                );
+            }
+            else
+            {
+                snprintf(
+                    response,
+                    sizeof(response),
+                    "STATE UNKNOWN\n"
+                );
+            }
+        }
+
+
+        /*
+         * RESET
+         */
+
+        else if (strcmp(buffer, "RESET") == 0)
+        {
+            pthread_mutex_lock(&equipment->mutex);
+
+            equipment->state = EQUIPMENT_IDLE;
+
+            pthread_mutex_unlock(&equipment->mutex);
+
+
+            snprintf(
+                response,
+                sizeof(response),
+                "ACK RESET\n"
+            );
+        }
+
+
+        /*
+         * Unknown command
+         */
+
+        else
+        {
+            snprintf(
+                response,
+                sizeof(response),
+                "NACK UNKNOWN COMMAND\n"
+            );
+        }
+
+
+        /*
+         * Send response
+         */
+
+        if (send(
+                client_fd,
+                response,
+                strlen(response),
+                0) == -1)
         {
             perror("send");
             break;
         }
 
-        printf( "[Thread %lu] response sent: %s", (unsigned long)pthread_self(), response);
+
+        printf(
+            "[Thread %lu] Response sent: %s",
+            (unsigned long)pthread_self(),
+            response
+        );
     }
+
 
     close(client_fd);
 
-    printf("Thread: connection closed.\n");
+
+    printf("[Thread %lu] Connection closed.\n", (unsigned long)pthread_self()
+    );
+
 
     return NULL;
 }
 
 
+
+
 int main(void)
 {
+
+    Equipment equipment;
+
+    equipment_create( &equipment, 101, "ETCH01" );
+
+    equipment_init(&equipment);
+    
     struct sigaction sa;
 
     memset( &sa, 0, sizeof(sa));
@@ -191,39 +357,45 @@ int main(void)
 
     while (server_running)
     {
-        int *client_fd = malloc(sizeof(int));
+        int accepted_fd;
 
-        if (client_fd == NULL)
-        {
-            perror("malloc");
-            continue;
-        }
+        accepted_fd = accept( server_fd, NULL, NULL );
 
-        *client_fd = accept( server_fd, NULL, NULL);
-
-        if (*client_fd == -1)
+        if (accepted_fd == -1)
         {
             if (errno == EINTR)
             {
                 printf("errno == EINTR\n");
-                free(client_fd);
                 break;
             }
 
             perror("accept");
-            free(client_fd);
+
             continue;
         }
 
         printf("Server: client connected.\n");
 
+        ClientContext *context =  malloc(sizeof(ClientContext));
+
+        if (context == NULL)
+        {
+            perror("malloc");
+            close(accepted_fd);
+            continue;
+        }
+
+        context->client_fd = accepted_fd;
+
+        context->equipment = &equipment;
+
         pthread_t thread;
 
-        if (pthread_create( &thread, NULL, client_handler, client_fd) != 0)
+        if (pthread_create( &thread, NULL, client_handler, context) != 0)
         {
             perror("pthread_create");
-            close(*client_fd);
-            free(client_fd);
+            close(accepted_fd);
+            free(context);
             continue;
         }
        
@@ -241,6 +413,8 @@ int main(void)
     close(server_fd);
 
     printf("Server: server socket closed.\n");
+
+    equipment_destroy(&equipment);
 
     return 0;
 }

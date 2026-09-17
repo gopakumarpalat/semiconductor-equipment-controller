@@ -49,7 +49,13 @@ static int equipment_transition(Equipment *equipment, EquipmentCommand command)
 
 void equipment_init(Equipment *equipment)
 {
-    if (equipment_transition(equipment, EQUIPMENT_CMD_INIT) == 0)
+    pthread_mutex_lock(&equipment->mutex);
+
+    int result = equipment_transition( equipment, EQUIPMENT_CMD_INIT );
+
+    pthread_mutex_unlock(&equipment->mutex);
+
+    if (result == 0)
     {
         printf("Equipment initialized(IDLE -> READY).\n");
     }
@@ -61,10 +67,20 @@ void equipment_init(Equipment *equipment)
 
 void equipment_start(Equipment *equipment)
 {
-    if (equipment_transition(equipment, EQUIPMENT_CMD_START) == 0)
+    pthread_mutex_lock(&equipment->mutex);
+
+    int result = equipment_transition( equipment, EQUIPMENT_CMD_START );
+
+    pthread_mutex_unlock(&equipment->mutex);
+
+    if (result == 0)
     {
         printf("Equipment started(READY -> RUNNING).\n");
-        // Check function pointer is valid; else it will cause crash.
+
+        /*
+         * Call callback AFTER releasing mutex.
+         */
+
         if (equipment->start_callback != NULL)
         {
             equipment->start_callback(equipment);
@@ -78,10 +94,26 @@ void equipment_start(Equipment *equipment)
 
 void equipment_stop(Equipment *equipment)
 {
-    if (equipment_transition(equipment, EQUIPMENT_CMD_STOP) == 0)
+    pthread_mutex_lock(&equipment->mutex);
+
+    int result =
+        equipment_transition(
+            equipment,
+            EQUIPMENT_CMD_STOP
+        );
+
+    pthread_mutex_unlock(&equipment->mutex);
+
+
+    if (result == 0)
     {
         printf("Equipment stopped(RUNNING -> READY).\n");
-        // Check function pointer is valid; else it will cause crash.
+
+
+        /*
+         * Call callback AFTER releasing mutex.
+         */
+
         if (equipment->stop_callback != NULL)
         {
             equipment->stop_callback(equipment);
