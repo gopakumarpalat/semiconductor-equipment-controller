@@ -92,6 +92,7 @@ int main(void)
     {
         "START\n",
         "STATUS\n",
+        "ALARM\n",
         "STOP\n",
         "STATUS\n",
         "RESET\n",
@@ -134,7 +135,7 @@ int main(void)
 
     printf("Client: connected to server.\n");
 
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 7; i++)
     {
         printf( "Client: sending command: %s", commands[i]);
 

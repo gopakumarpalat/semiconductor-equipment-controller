@@ -186,7 +186,7 @@ void equipment_set_alarm_callback( Equipment *equipment, EquipmentAlarmCallback 
 
 void equipment_raise_alarm( Equipment *equipment, const char *message)
 {
-    printf("\nEquipment alarm detected.\n");
+    //printf("\nEquipment alarm detected.\n");
 
     if (equipment->alarm_callback != NULL)
     {
