@@ -81,10 +81,7 @@ void equipment_start(Equipment *equipment)
          * Call callback AFTER releasing mutex.
          */
 
-        if (equipment->start_callback != NULL)
-        {
-            equipment->start_callback(equipment);
-        }
+        equipment_notify_event( equipment, EQUIPMENT_EVENT_STARTED, "Equipment started successfully");
     }
     else
     {
@@ -104,20 +101,15 @@ void equipment_stop(Equipment *equipment)
 
     pthread_mutex_unlock(&equipment->mutex);
 
-
     if (result == 0)
     {
         printf("Equipment stopped(RUNNING -> READY).\n");
-
 
         /*
          * Call callback AFTER releasing mutex.
          */
 
-        if (equipment->stop_callback != NULL)
-        {
-            equipment->stop_callback(equipment);
-        }
+        equipment_notify_event( equipment, EQUIPMENT_EVENT_STOPPED, "Equipment stopped successfully");
     }
     else
     {
@@ -155,9 +147,7 @@ void equipment_create(Equipment *equipment, int id, const char *name)
 
     equipment->state = EQUIPMENT_IDLE;
 
-    equipment->start_callback = NULL;
-    equipment->stop_callback = NULL;
-    equipment->alarm_callback = NULL;
+    equipment->event_callback = NULL;
 
     pthread_mutex_init( &equipment->mutex, NULL);
 
@@ -169,27 +159,36 @@ void equipment_destroy(Equipment *equipment)
     pthread_mutex_destroy(&equipment->mutex);
 }
 
-void equipment_set_start_callback( Equipment *equipment, EquipmentStartCallback callback)
-{
-    equipment->start_callback = callback;
-}
 
-void equipment_set_stop_callback( Equipment *equipment, EquipmentStopCallback callback)
+void equipment_set_event_callback( Equipment *equipment, EquipmentEventCallback callback)
 {
-    equipment->stop_callback = callback;
-}
-
-void equipment_set_alarm_callback( Equipment *equipment, EquipmentAlarmCallback callback)
-{
-    equipment->alarm_callback = callback;
+    equipment->event_callback = callback;
 }
 
 void equipment_raise_alarm( Equipment *equipment, const char *message)
 {
-    //printf("\nEquipment alarm detected.\n");
+    equipment_notify_event( equipment, EQUIPMENT_EVENT_ALARM, message );
+}
 
-    if (equipment->alarm_callback != NULL)
+
+/**
+ * @brief Notify the registered event callback about an equipment event.
+ *
+ * This function checks whether a generic event callback has been
+ * registered for the equipment. If registered, it invokes the callback
+ * and passes the equipment instance, event type, and optional message.
+ *
+ * @param equipment Pointer to the equipment instance.
+ * @param event     Event type to be notified.
+ * @param message   Optional message associated with the event.
+ *
+ * @note The callback is invoked only when a valid event callback
+ *       has been registered using equipment_set_event_callback().
+ */
+void equipment_notify_event( Equipment *equipment, EquipmentEvent event, const char *message)
+{
+    if (equipment->event_callback != NULL)
     {
-        equipment->alarm_callback( equipment, message);
+        equipment->event_callback( equipment, event, message);
     }
 }

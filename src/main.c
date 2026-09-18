@@ -39,14 +39,14 @@ int main()
 
 
     // Set equipment_started_message as a callback function of equipment
-    equipment_set_start_callback( &equipment_list[0], equipment_started_message );
-    equipment_set_start_callback( &equipment_list[3], equipment_started_message );    
+    //equipment_set_start_callback( &equipment_list[0], equipment_started_message );
+    //equipment_set_start_callback( &equipment_list[3], equipment_started_message );    
 
     //Register the stop callback for ETCH01.
-    equipment_set_stop_callback( &equipment_list[0], equipment_stop_message );  
+    //equipment_set_stop_callback( &equipment_list[0], equipment_stop_message );  
     
     //Register the alarm callback for ETCH01.
-    equipment_set_alarm_callback( &equipment_list[0], equipment_alarm_message);
+    //equipment_set_alarm_callback( &equipment_list[0], equipment_alarm_message);
 
     for(int i = 0; i < 4; i++)
     {

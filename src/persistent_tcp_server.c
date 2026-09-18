@@ -144,56 +144,32 @@ void handle_sigint(int signal)
  *===========================================================================*/
 
 /**
- * @brief Handles the equipment start callback.
+ * @brief Handle generic equipment events.
  *
- * This callback is invoked by the Equipment module after a successful
- * transition from READY to RUNNING.
- *
- * @param equipment Pointer to the equipment instance.
- *
- * @return None.
+ * @param equipment Equipment that generated the event.
+ * @param event     Type of equipment event.
+ * @param message   Optional event message.
  */
-void on_equipment_started(Equipment *equipment)
+void on_equipment_event( Equipment *equipment, EquipmentEvent event, const char *message) 
 {
-    printf(
-        ">>> CALLBACK: %s has started!\n",
-        equipment->name
-    );
-}
+    switch (event)
+    {
+        case EQUIPMENT_EVENT_STARTED:
+            printf( ">>> EVENT: %s STARTED: %s\n", equipment->name, message );
+            break;
 
+        case EQUIPMENT_EVENT_STOPPED:
+            printf( ">>> EVENT: %s STOPPED: %s\n", equipment->name, message );
+            break;
 
-/**
- * @brief Handles the equipment stop callback.
- *
- * This callback is invoked by the Equipment module after a successful
- * transition from RUNNING to READY.
- *
- * @param equipment Pointer to the equipment instance.
- *
- * @return None.
- */
-void on_equipment_stopped(Equipment *equipment)
-{
-    printf(
-        ">>> CALLBACK: %s has stopped!\n",
-        equipment->name
-    );
-}
+        case EQUIPMENT_EVENT_ALARM:
+            printf( ">>> EVENT: %s ALARM: %s\n", equipment->name, message );
+            break;
 
-
-/**
- * @brief Handles an equipment alarm callback.
- *
- * This callback is invoked when the Equipment module raises an alarm.
- *
- * @param equipment Pointer to the equipment instance.
- * @param message   Description of the alarm condition.
- *
- * @return None.
- */
-void on_equipment_alarm( Equipment *equipment, const char *message)
-{
-    printf( ">>> CALLBACK: %s ALARM: %s!\n", equipment->name, message );
+        default:
+            printf( ">>> EVENT: %s UNKNOWN EVENT\n", equipment->name );
+            break;
+    }
 }
 
 
@@ -487,9 +463,7 @@ int main(void)
      * These callbacks are invoked by the Equipment module when the
      * corresponding events occur.
      */
-    equipment_set_start_callback( &equipment, on_equipment_started );
-    equipment_set_stop_callback( &equipment, on_equipment_stopped );
-    equipment_set_alarm_callback( &equipment, on_equipment_alarm);
+    equipment_set_event_callback( &equipment, on_equipment_event);
 
     /*
      * Move equipment from IDLE to READY.
