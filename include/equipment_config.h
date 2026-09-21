@@ -13,6 +13,7 @@ typedef struct
     char equipment_name[32];
     int tcp_port;
     char server_ip[64];
+    char log_file[128];
 
     /*
      * Configuration presence flags.
@@ -21,6 +22,7 @@ typedef struct
     int has_equipment_name;
     int has_tcp_port;
     int has_server_ip;
+    int has_log_file;
 
 } EquipmentConfig;
 

@@ -73,6 +73,7 @@
 #include <errno.h>
 #include "equipment.h"
 #include "equipment_config.h"
+#include "logger.h"
 
 /*===========================================================================
  * Constants
@@ -150,7 +151,37 @@ void handle_sigint(int signal)
  */
 void on_equipment_event( Equipment *equipment, EquipmentEvent event, const char *message) 
 {
-     printf( ">>> EVENT: %s %s: %s\n", equipment->name, equipment_event_name(event), message );
+    char log_message[256];
+
+    /*
+     * Print the event to the terminal.
+     */
+    printf( ">>> EVENT: %s %s: %s\n", equipment->name, equipment_event_name(event), message );
+
+     /*
+     * Create a descriptive log message.
+     */
+    snprintf(
+        log_message,
+        sizeof(log_message),
+        "%s %s: %s",
+        equipment->name,
+        equipment_event_name(event),
+        message
+    );
+
+    /*
+     * Equipment alarms are logged as warnings.
+     * Normal equipment events are informational.
+     */
+    if (event == EQUIPMENT_EVENT_ALARM)
+    {
+        logger_log( LOG_WARNING, log_message );
+    }
+    else
+    {
+        logger_log( LOG_INFO, log_message );
+    }
 }
 
 
@@ -276,7 +307,14 @@ void *client_handler(void *arg)
         */
         if (bytes_received == -1)
         {
+            char log_message[256];
+
             perror("recv_line");
+
+            snprintf( log_message, sizeof(log_message), "recv_line() failed: %s", strerror(errno));
+
+            logger_log( LOG_ERROR, log_message );
+
             break;
         }
 
@@ -286,10 +324,17 @@ void *client_handler(void *arg)
         if (bytes_received == 0)
         {
             printf( "[Thread %lu] Client disconnected.\n", (unsigned long)pthread_self());
+            logger_log( LOG_INFO, "Client disconnected.");
             break;
         }
 
         printf( "[Thread %lu] Received command: %s\n", (unsigned long)pthread_self(), buffer );
+
+        char log_message[1200];
+
+        snprintf( log_message, sizeof(log_message), "Received command: %s", buffer );
+
+        logger_log( LOG_INFO, log_message );
 
         char response[2048];
 
@@ -392,7 +437,14 @@ void *client_handler(void *arg)
          *------------------------------------------------------------------*/
         if (send( client_fd, response, strlen(response), 0) == -1)
         {
+            char log_message[256];
+
             perror("send");
+
+            snprintf( log_message, sizeof(log_message), "send() failed: %s", strerror(errno));
+
+            logger_log( LOG_ERROR, log_message );
+
             break;
         }
 
@@ -405,6 +457,7 @@ void *client_handler(void *arg)
     close(client_fd);
 
     printf("[Thread %lu] Connection closed.\n", (unsigned long)pthread_self());
+    logger_log( LOG_INFO, "Client worker connection closed." );
 
     return NULL;
 }
@@ -446,6 +499,19 @@ int main(void)
         printf("Equipment configuration validation failed.\n");
         return 1;
     }
+
+
+    /*-----------------------------------------------------------------------
+     * Initialize logger
+     *-----------------------------------------------------------------------*/
+
+    if (logger_init(config.log_file) != 0)
+    {
+        printf("Failed to initialize logger.\n");
+        return 1;
+    }
+
+    logger_log( LOG_INFO, "Equipment server started.");
 
     /*-----------------------------------------------------------------------
      * Equipment initialization
@@ -494,7 +560,14 @@ int main(void)
 
     if (server_fd == -1)
     {
+        char log_message[256];
+
         perror("socket");
+
+        snprintf(log_message, sizeof(log_message), "socket() failed: %s", strerror(errno));
+
+        logger_log( LOG_ERROR, log_message );
+
         return 1;
     }
 
@@ -526,7 +599,14 @@ int main(void)
      *-----------------------------------------------------------------------*/
     if (bind( server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1)
     {
+        char log_message[256];
+
         perror("bind");
+
+        snprintf( log_message, sizeof(log_message), "bind() failed on port %d: %s", config.tcp_port, strerror(errno));
+
+        logger_log(LOG_ERROR, log_message );
+
         close(server_fd);
         return 1;
     }
@@ -538,7 +618,14 @@ int main(void)
      *-----------------------------------------------------------------------*/
     if (listen(server_fd, 5) == -1)
     {
+        char log_message[256];
+
         perror("listen");
+
+        snprintf( log_message, sizeof(log_message), "listen() failed: %s", strerror(errno));
+
+        logger_log(LOG_ERROR, log_message);
+
         close(server_fd);
         return 1;
     }
@@ -577,10 +664,17 @@ int main(void)
 
             perror("accept");
 
+            char log_message[256];
+
+            snprintf( log_message, sizeof(log_message), "accept() failed: %s", strerror(errno));
+
+            logger_log( LOG_ERROR, log_message);
+
             continue;
         }
 
         printf("Server: client connected.\n");
+        logger_log( LOG_INFO, "Client connected.");
 
         /*-------------------------------------------------------------------
          * Allocate client context
@@ -628,15 +722,19 @@ int main(void)
      * Server shutdown
      *-----------------------------------------------------------------------*/
     printf("Server: shutting down...\n");
+    logger_log( LOG_INFO, "Server shutting down." );
 
     close(server_fd);
 
     printf("Server: server socket closed.\n");
+    logger_log( LOG_INFO, "Server socket closed." );
 
     /*
      * Release equipment resources, including its mutex.
      */
     equipment_destroy(&equipment);
+
+    logger_shutdown();
 
     return 0;
 }

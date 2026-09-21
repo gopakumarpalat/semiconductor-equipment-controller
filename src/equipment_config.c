@@ -68,6 +68,7 @@ int equipment_config_load( const char *filename, EquipmentConfig *config)
     config->equipment_name[0] = '\0';
     config->tcp_port = 5000;
     config->server_ip[0] = '\0';
+    config->log_file[0] = '\0';
 
     /*
      * Reset configuration presence flags.
@@ -76,6 +77,7 @@ int equipment_config_load( const char *filename, EquipmentConfig *config)
     config->has_equipment_name = 0;
     config->has_tcp_port = 0;
     config->has_server_ip = 0;
+    config->has_log_file = 0;
 
     /*
      * Open configuration file.
@@ -172,6 +174,19 @@ int equipment_config_load( const char *filename, EquipmentConfig *config)
             config->server_ip[ sizeof(config->server_ip) - 1] = '\0';
 
             config->has_server_ip = 1;
+        }
+
+        /* -------------------------------------------------------------
+         * LOG_FILE
+         * ------------------------------------------------------------- */
+
+        else if (strcmp(key, "LOG_FILE") == 0)
+        {
+            strncpy( config->log_file, value, sizeof(config->log_file) - 1 );
+
+            config->log_file[sizeof(config->log_file) - 1] = '\0';
+
+            config->has_log_file = 1;
         }
 
 
@@ -293,6 +308,27 @@ int equipment_config_validate(
     if (config->server_ip[0] == '\0')
     {
         printf("Configuration error: SERVER_IP is empty.\n" );
+
+        return -1;
+    }
+
+    /* ---------------------------------------------------------------------
+     * LOG_FILE
+     * --------------------------------------------------------------------- */
+    if (config->has_log_file == 0)
+    {
+        printf(
+            "Configuration error: LOG_FILE is missing.\n"
+        );
+
+        return -1;
+    }
+
+    if (config->log_file[0] == '\0')
+    {
+        printf(
+            "Configuration error: LOG_FILE is empty.\n"
+        );
 
         return -1;
     }

@@ -12,7 +12,7 @@ EQUIPMENT_SRC = src/main.c src/equipment.c
 # Day 6 TCP server
 SERVER_TARGET = build/persistent_tcp_server.exe
 
-SERVER_SRC = src/persistent_tcp_server.c src/equipment.c src/equipment_config.c
+SERVER_SRC = src/persistent_tcp_server.c src/equipment.c src/equipment_config.c src/logger.c
 
 
 # Day 6 TCP client
@@ -25,9 +25,14 @@ CONFIG_TARGET = build/config_test
 
 CONFIG_SRC = tests/config_test.c src/equipment_config.c
 
+# Day 8 Logger test
+LOGGER_TARGET = build/logger_test
+
+LOGGER_SRC = tests/logger_test.c src/logger.c
+
 
 # Build everything
-all: equipment server client config_test
+all: equipment server client config_test logger_test
 
 
 # Existing equipment program
@@ -57,3 +62,7 @@ clean:
 # Configuration test
 config_test:
 	$(CC) $(CFLAGS) $(CONFIG_SRC) -o $(CONFIG_TARGET)
+
+# Logger test
+logger_test:
+	$(CC) $(CFLAGS) $(LOGGER_SRC) -o $(LOGGER_TARGET)
