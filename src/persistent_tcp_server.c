@@ -72,15 +72,13 @@
 #include <signal.h>
 #include <errno.h>
 #include "equipment.h"
+#include "equipment_config.h"
 
 /*===========================================================================
  * Constants
  *===========================================================================*/
 
-/**
- * @brief TCP port used by the equipment control server.
- */
-#define PORT 5000
+
 
 /*===========================================================================
  * Data Types
@@ -432,13 +430,29 @@ void *client_handler(void *arg)
  */
 int main(void)
 {
+    /*-----------------------------------------------------------------------
+     * Read PORT from config file
+     *-----------------------------------------------------------------------*/
+    EquipmentConfig config = {0};
+
+    if (equipment_config_load( "config/equipment.conf", &config) != 0)
+    {
+        printf("Failed to load equipment configuration.\n");
+        return 1;
+    }
+
+    if (equipment_config_validate(&config) != 0)
+    {
+        printf("Equipment configuration validation failed.\n");
+        return 1;
+    }
 
     /*-----------------------------------------------------------------------
      * Equipment initialization
      *-----------------------------------------------------------------------*/
     Equipment equipment;
 
-    equipment_create( &equipment, 101, "ETCH01" );
+    equipment_create( &equipment, config.equipment_id, config.equipment_name);
 
     /*
      * Register equipment callbacks.
@@ -504,7 +518,7 @@ int main(void)
      * htons() converts the port number from host byte order
      * to network byte order.
      */
-    server_addr.sin_port = htons(PORT);
+    server_addr.sin_port = htons(config.tcp_port);
 
 
     /*-----------------------------------------------------------------------
@@ -529,7 +543,7 @@ int main(void)
         return 1;
     }
 
-    printf( "Server: waiting for clients on port %d...\n", PORT);
+    printf( "Server: waiting for clients on port %d...\n", config.tcp_port);
 
     printf( "Main Thread ID: %lu\n", (unsigned long)pthread_self());
 

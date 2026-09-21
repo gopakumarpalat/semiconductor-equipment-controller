@@ -77,23 +77,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
-
-/* ================================================================
- * Configuration
- * ================================================================ */
-
-/**
- * @brief TCP port used by the equipment server.
- */
-#define PORT 5000
-
-/**
- * @brief IP address of the equipment server.
- *
- * 127.0.0.1 refers to the local machine.
- */
-#define SERVER_IP "127.0.0.1"
+#include "equipment_config.h"
 
 
 /* ================================================================
@@ -186,6 +170,24 @@ int recv_line( int client_fd, char *buffer, int buffer_size)
  */
 int main(void)
 {
+    /*-----------------------------------------------------------------------
+     * Read PORT from config file
+     *-----------------------------------------------------------------------*/
+    EquipmentConfig config = {0};
+
+    if (equipment_config_load( "config/equipment.conf", &config) != 0)
+    {
+        printf("Failed to load equipment configuration.\n");
+        return 1;
+    }
+
+    if (equipment_config_validate(&config) != 0)
+    {
+        printf("Equipment configuration validation failed.\n");
+        return 1;
+    }
+
+
     int client_fd;
 
     /*
@@ -241,7 +243,7 @@ int main(void)
      * Convert the port number from host byte order to
      * network byte order.
      */
-    server_addr.sin_port = htons(PORT);
+    server_addr.sin_port = htons(config.tcp_port);
 
     /*
      * Convert the server IP address from text format
@@ -249,7 +251,7 @@ int main(void)
      *
      * The converted address is stored in sin_addr.
      */
-    if (inet_pton( AF_INET, SERVER_IP, &server_addr.sin_addr) <= 0)
+    if (inet_pton( AF_INET, config.server_ip, &server_addr.sin_addr) <= 0)
     {
         perror("inet_pton");
         close(client_fd);
