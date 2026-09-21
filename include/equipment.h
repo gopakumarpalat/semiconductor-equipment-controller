@@ -20,7 +20,7 @@
  * @note
  * This module uses POSIX pthreads and is intended for Linux/WSL.
  *
- * @author Your Name
+ * @author Gopakumar Palat
  * @date 2026-09-18
  */
 #ifndef EQUIPMENT_H
@@ -295,5 +295,19 @@ void equipment_raise_alarm( Equipment *equipment, const char *message);
  * @param message   Optional message associated with the event.
  */
 void equipment_notify_event(Equipment *equipment, EquipmentEvent event, const char *message);
+
+
+/*===========================================================================
+ * Helper functions
+ *===========================================================================*/
+/**
+ * @brief Get the string representation of an equipment event.
+ *
+ * @param event Equipment event type.
+ *
+ * @return String representation of the event.
+ */
+const char *equipment_event_name(EquipmentEvent event);
+
 
 #endif

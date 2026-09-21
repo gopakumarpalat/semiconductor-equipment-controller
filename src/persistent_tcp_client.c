@@ -1,32 +1,75 @@
+/**
+ * @file persistent_tcp_client.c
+ * @brief TCP client for communicating with the semiconductor equipment server.
+ *
+ * @details
+ * This program implements a persistent TCP client that connects to the
+ * equipment control server and sends a sequence of equipment commands.
+ *
+ * The client maintains a single TCP connection while sending multiple
+ * commands and receiving a response for each command.
+ *
+ * Supported commands in this test client:
+ * - START
+ * - STATUS
+ * - ALARM
+ * - STOP
+ * - RESET
+ *
+ * Communication flow:
+ *
+ *     Client                          Server
+ *       |                               |
+ *       |-------- connect() ----------->|
+ *       |                               |
+ *       |-------- command ------------->|
+ *       |<------- response -------------|
+ *       |                               |
+ *       |-------- command ------------->|
+ *       |<------- response -------------|
+ *       |                               |
+ *       |-------- close() ------------->|
+ *
+ * @note This implementation uses POSIX socket APIs and is intended
+ *       to be built and executed in a Linux/WSL environment.
+ *
+ * @author Gopakumar Palat
+ * @date 2026-09-18
+ */
+
+ /* ================================================================
+ * TCP Communication Flow
+ * ================================================================ */
+
 /*
-
-Client                                      Server
-  │                                           │
-  │──────── connect() ──────────────────────►│
-  │                                           │
-  │──────── START ──────────────────────────►│
-  │◄──────── ACK START ──────────────────────│
-  │                                           │
-  │──────── STATUS ─────────────────────────►│
-  │◄──────── STATE RUNNING ──────────────────│
-  │                                           │
-  │──────── STOP ───────────────────────────►│
-  │◄──────── ACK STOP ───────────────────────│
-  │                                           │
-  │──────── STATUS ─────────────────────────►│
-  │◄──────── STATE READY ────────────────────│
-  │                                           │
-  │──────── RESET ──────────────────────────►│
-  │◄──────── ACK RESET ──────────────────────│
-  │                                           │
-  │──────── STATUS ─────────────────────────►│
-  │◄──────── STATE IDLE ─────────────────────│
-  │                                           │
-  │──────── close() ────────────────────────►│
-  │                                           │
-
-*/
-
+ * Client                                      Server
+ *   │                                           │
+ *   │──────── connect() ──────────────────────►│
+ *   │                                           │
+ *   │──────── START ──────────────────────────►│
+ *   │◄──────── ACK START ──────────────────────│
+ *   │                                           │
+ *   │──────── STATUS ─────────────────────────►│
+ *   │◄──────── STATE RUNNING ──────────────────│
+ *   │                                           │
+ *   │──────── ALARM ──────────────────────────►│
+ *   │◄──────── ACK ALARM ──────────────────────│
+ *   │                                           │
+ *   │──────── STOP ───────────────────────────►│
+ *   │◄──────── ACK STOP ───────────────────────│
+ *   │                                           │
+ *   │──────── STATUS ─────────────────────────►│
+ *   │◄──────── STATE READY ────────────────────│
+ *   │                                           │
+ *   │──────── RESET ──────────────────────────►│
+ *   │◄──────── ACK RESET ──────────────────────│
+ *   │                                           │
+ *   │──────── STATUS ─────────────────────────►│
+ *   │◄──────── STATE IDLE ─────────────────────│
+ *   │                                           │
+ *   │──────── close() ────────────────────────►│
+ *   │                                           │
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,10 +78,46 @@ Client                                      Server
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
+
+/* ================================================================
+ * Configuration
+ * ================================================================ */
+
+/**
+ * @brief TCP port used by the equipment server.
+ */
 #define PORT 5000
+
+/**
+ * @brief IP address of the equipment server.
+ *
+ * 127.0.0.1 refers to the local machine.
+ */
 #define SERVER_IP "127.0.0.1"
 
 
+/* ================================================================
+ * Private Functions
+ * ================================================================ */
+
+/**
+ * @brief Receive a complete line from the TCP server.
+ *
+ * TCP does not preserve message boundaries. Therefore, this function
+ * receives data one byte at a time until a newline character is
+ * received.
+ *
+ * The newline character is not stored in the output buffer.
+ * The received data is always null-terminated.
+ *
+ * @param client_fd   TCP socket file descriptor.
+ * @param buffer      Buffer used to store the received line.
+ * @param buffer_size Size of the receive buffer.
+ *
+ * @return Number of characters received, excluding the newline.
+ * @return 0 if the server closed the connection.
+ * @return -1 if a receive error occurred.
+ */
 int recv_line( int client_fd, char *buffer, int buffer_size)
 {
     int total = 0;
@@ -47,22 +126,31 @@ int recv_line( int client_fd, char *buffer, int buffer_size)
     {
         char ch;
 
-        int bytes_received = recv(
-            client_fd,
-            &ch,
-            1,
-            0);
+        /*
+         * Receive one byte from the server.
+         */
+        int bytes_received = recv( client_fd, &ch, 1, 0);
 
+        /*
+         * recv() returned an error.
+         */
         if (bytes_received == -1)
         {
             return -1;
         }
 
+         /*
+         * recv() returned 0, which means the server
+         * has closed the connection.
+         */
         if (bytes_received == 0)
         {
             return 0;
         }
 
+        /*
+         * Newline marks the end of the message.
+         */
         if (ch == '\n')
         {
             buffer[total] = '\0';
@@ -73,21 +161,44 @@ int recv_line( int client_fd, char *buffer, int buffer_size)
         total++;
     }
 
+    /*
+     * Buffer is full. Ensure null termination.
+     */
     buffer[total] = '\0';
 
     return total;
 }
 
 
+/* ================================================================
+ * Main Function
+ * ================================================================ */
 
+/**
+ * @brief Entry point of the persistent TCP client.
+ *
+ * Creates a TCP socket, connects to the equipment server, sends
+ * a predefined sequence of commands, receives responses, and
+ * finally closes the connection.
+ *
+ * @return 0 on successful completion.
+ * @return 1 if a socket, connection, send, or receive error occurs.
+ */
 int main(void)
 {
     int client_fd;
 
-    struct sockaddr_in server_addr; // Which server to connect 
+    /*
+     * Structure containing the server's network address.
+     */
+    struct sockaddr_in server_addr;
 
-    //char *commands[] = { "START ETCH01\n", "STOP ETCH01\n", "RESET ETCH01\n" };
-
+    /*
+     * Commands sent to the equipment server.
+     *
+     * Each command ends with '\n' because the server uses
+     * newline-based message framing.
+     */
     char *commands[] =
     {
         "START\n",
@@ -99,7 +210,9 @@ int main(void)
         "STATUS\n"
     };
 
-    // Create client socket
+    /* ============================================================
+     * Create TCP Socket
+     * ============================================================ */
     client_fd = socket( AF_INET, SOCK_STREAM, 0);
 
     if (client_fd == -1)
@@ -110,14 +223,32 @@ int main(void)
 
     printf("Client: socket created.\n");
 
-    // set 0 to server_addr
+    /* ============================================================
+     * Configure Server Address
+     * ============================================================ */
+
+    /*
+     * Clear the server address structure before assigning values.
+     */
     memset( &server_addr, 0, sizeof(server_addr));
 
+    /*
+     * Specify IPv4 address family.
+     */
     server_addr.sin_family = AF_INET;
+
+    /*
+     * Convert the port number from host byte order to
+     * network byte order.
+     */
     server_addr.sin_port = htons(PORT);
 
-    // Convert IP address string to binary network format.
-    // Converted IP adress will store into &server_addr.sin_addr.
+    /*
+     * Convert the server IP address from text format
+     * to binary network format.
+     *
+     * The converted address is stored in sin_addr.
+     */
     if (inet_pton( AF_INET, SERVER_IP, &server_addr.sin_addr) <= 0)
     {
         perror("inet_pton");
@@ -125,7 +256,9 @@ int main(void)
         return 1;
     }
 
-    // Connect to the server
+    /* ============================================================
+     * Connect to Server
+     * ============================================================ */
     if (connect( client_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1)
     {
         perror("connect");
@@ -135,10 +268,17 @@ int main(void)
 
     printf("Client: connected to server.\n");
 
+
+    /* ============================================================
+     * Send Commands and Receive Responses
+     * ============================================================ */
     for (int i = 0; i < 7; i++)
     {
         printf( "Client: sending command: %s", commands[i]);
 
+        /*
+         * Send the complete command to the server.
+         */
         if (send( client_fd, commands[i], strlen(commands[i]), 0) == -1)
         {
             perror("send");
@@ -148,12 +288,21 @@ int main(void)
 
         printf("Client: command sent.\n");
 
+        /*
+         * Buffer used to store the server response.
+         */
         char buffer[1024];
 
         int bytes_received;
 
+        /*
+         * Receive one complete line from the server.
+         */
         bytes_received = recv_line( client_fd, buffer, sizeof(buffer));
 
+        /*
+         * Receive error.
+         */
         if (bytes_received == -1)
         {
             perror("recv_line");
@@ -161,6 +310,9 @@ int main(void)
             return 1;
         }
 
+        /*
+         * Server closed the connection.
+         */
         if (bytes_received == 0)
         {
             printf("Client: server disconnected.\n");
@@ -169,6 +321,10 @@ int main(void)
 
         printf( "Client: received response: %s\n", buffer);
     }
+
+    /* ============================================================
+     * Close Connection
+     * ============================================================ */
 
     close(client_fd);
 

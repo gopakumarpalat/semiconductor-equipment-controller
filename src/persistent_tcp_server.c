@@ -152,24 +152,7 @@ void handle_sigint(int signal)
  */
 void on_equipment_event( Equipment *equipment, EquipmentEvent event, const char *message) 
 {
-    switch (event)
-    {
-        case EQUIPMENT_EVENT_STARTED:
-            printf( ">>> EVENT: %s STARTED: %s\n", equipment->name, message );
-            break;
-
-        case EQUIPMENT_EVENT_STOPPED:
-            printf( ">>> EVENT: %s STOPPED: %s\n", equipment->name, message );
-            break;
-
-        case EQUIPMENT_EVENT_ALARM:
-            printf( ">>> EVENT: %s ALARM: %s\n", equipment->name, message );
-            break;
-
-        default:
-            printf( ">>> EVENT: %s UNKNOWN EVENT\n", equipment->name );
-            break;
-    }
+     printf( ">>> EVENT: %s %s: %s\n", equipment->name, equipment_event_name(event), message );
 }
 
 
