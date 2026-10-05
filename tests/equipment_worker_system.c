@@ -40,7 +40,7 @@
  */
 
 
-#include <stdio.h>
+#include <stdio.h>  
 #include <pthread.h>
 #include <unistd.h>
 #include <semaphore.h>
@@ -426,15 +426,13 @@ void *worker(void *arg)
              * Remove the oldest command while the
              * queue mutex is locked.
              */
-            command =
-                queue->commands[queue->head];
+            command = queue->commands[queue->head];
 
 
             /*
              * Move head to the next circular position.
              */
-            queue->head =
-                (queue->head + 1) % QUEUE_SIZE;
+            queue->head = (queue->head + 1) % QUEUE_SIZE;
 
 
             /*
